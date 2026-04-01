@@ -1,0 +1,26 @@
+# ---- CORE ----
+Django==5.0.6
+djangorestframework==3.14.0
+djangorestframework-simplejwt==5.3.1
+
+# ---- SERVER ----
+gunicorn==21.2.0
+whitenoise==6.6.0
+
+# ---- DATABASE ----
+psycopg2-binary==2.9.9
+
+# ---- ENV CONFIG ----
+python-decouple==3.8
+python-dotenv==1.2.1
+
+# ---- AWS S3 STORAGE ----
+boto3==1.42.50
+django-storages==1.14.6
+
+# ---- EXCEL EXPORT ----
+openpyxl==3.1.2
+
+# ---- OPTIONAL ----
+pillow==10.4.0
+requests==2.31.0
