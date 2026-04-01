@@ -1,0 +1,708 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Dashboard | FinDash{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+    <!-- Top Summary Row -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <!-- Enhanced Balance Card -->
+        <div class="card bg-gradient-to-r from-purple-600 to-purple-500 text-white p-6 rounded-xl shadow-lg relative overflow-hidden h-full-breakdown">
+            <!-- Decorative elements -->
+            <div class="absolute -right-4 -top-4 w-24 h-24 rounded-full bg-white bg-opacity-10"></div>
+            <div class="absolute -right-6 -bottom-6 w-32 h-32 rounded-full bg-white bg-opacity-5"></div>
+
+            <div class="relative z-10">
+                <div class="flex justify-between items-start">
+                    <div>
+                        <div class="text-lg font-medium mb-1 flex items-center">
+                            <i class="fas fa-wallet mr-2 text-white text-opacity-80"></i>
+                            Current Balance
+                        </div>
+                        <div class="text-4xl font-bold tracking-tight current-balance-amount">₹0</div>
+                        <div class="text-sm text-purple-200 mt-1">Monthly Saving: ₹<span class="saving-amount">0</span></div>
+                    </div>
+                    <div class="bg-white bg-opacity-20 p-2 rounded-lg shadow-sm">
+                        <i class="fas fa-rupee-sign text-lg"></i>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-4 mt-4">
+                    <div class="bg-white bg-opacity-10 p-3 rounded-lg">
+                        <div class="text-xs opacity-80 mb-1">Income</div>
+                        <div class="font-bold income-amount text-green-100 text-lg">₹0</div>
+                    </div>
+                    <div class="bg-white bg-opacity-10 p-3 rounded-lg">
+                        <div class="text-xs opacity-80 mb-1">Expenses</div>
+                        <div class="font-bold expense-amount text-red-100 text-lg">₹0</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Budget Summary Card -->
+        <div class="card bg-white dark:bg-gray-800 p-6 rounded-xl shadow h-full-breakdown">
+            <div class="text-lg font-medium mb-4 dark:text-white">Budget Summary</div>
+            <div class="space-y-4">
+                <div>
+                    <div class="flex justify-between mb-1 text-sm">
+                        <span>Monthly Budget</span>
+                        <span class="font-medium monthly-budget-amount">₹0</span>
+                    </div>
+                    <div class="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2.5">
+                        <div class="budget-progress-bar h-2.5 rounded-full" style="width: 0%"></div>
+                    </div>
+                    <div class="flex justify-between mt-1 text-xs text-gray-500 dark:text-gray-400">
+                        <span class="spent-percentage">0% spent</span>
+                        <span class="remaining-percentage">100% remaining</span>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-3 gap-4 pt-2">
+                    <div class="text-center">
+                        <div class="text-sm text-gray-500 dark:text-gray-400">Remaining</div>
+                        <div class="text-xl font-bold text-green-500 dark:text-green-400 remaining-amount">₹0</div>
+                    </div>
+                    <div class="text-center">
+                        <div class="text-sm text-gray-500 dark:text-gray-400">Days Left</div>
+                        <div class="text-xl font-bold text-blue-500 dark:text-blue-400 days-left-amount">0</div>
+                    </div>
+                    <div class="text-center">
+                        <div class="text-sm text-gray-500 dark:text-gray-400">Daily Budget</div>
+                        <div class="text-xl font-bold text-purple-500 dark:text-purple-400 daily-budget-amount">₹0</div>
+                    </div>
+                </div>
+                
+                <div class="pt-2 text-sm text-gray-500 dark:text-gray-400">
+                    Next reset: <span class="next-reset-date font-medium">--</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Expense Breakdown Card -->
+        <div class="card bg-white dark:bg-gray-800 p-6 rounded-xl shadow h-full-breakdown flex flex-col">
+            <div class="text-lg font-medium mb-4 dark:text-white">Expense Breakdown</div>
+            
+            <!-- Scrollable container -->
+            <div id="expense-breakdown-container" class="space-y-3 overflow-y-auto flex-1 max-h-64">
+                <!-- Data will be injected here via JS -->
+            </div>
+            
+            <div class="pt-2 mt-2 border-t border-gray-200 dark:border-gray-700 flex-shrink-0">
+                <div class="flex justify-between font-bold">
+                    <span>Total Spent:</span>
+                    <span id="total-spent" class="text-red-500">₹0</span>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Chart and Transactions Row -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <!-- Daily Spend Tracker Calendar View -->
+        <div class="card bg-white dark:bg-gray-800 p-5 rounded-xl shadow">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="font-medium dark:text-white">Daily Spend Tracker</h3>
+                <div class="flex space-x-2">
+                    <button id="prev-month" class="text-sm bg-gray-100 dark:bg-gray-700 rounded-lg px-3 py-1">
+                        <i class="fas fa-chevron-left"></i>
+                    </button>
+                    <span id="current-month" class="text-sm font-medium px-2">
+                        {{ current_month }}
+                    </span>
+                    <button id="next-month" class="text-sm bg-gray-100 dark:bg-gray-700 rounded-lg px-3 py-1">
+                        <i class="fas fa-chevron-right"></i>
+                    </button>
+                </div>
+            </div>
+            
+            <div class="mb-4">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center space-x-2">
+                        <div class="w-3 h-3 rounded-full bg-green-300"></div>
+                        <span class="text-xs">Under Budget</span>
+                    </div>
+                    <div class="flex items-center space-x-2">
+                        <div class="w-3 h-3 rounded-full bg-yellow-300"></div>
+                        <span class="text-xs">Near Limit</span>
+                    </div>
+                    <div class="flex items-center space-x-2">
+                        <div class="w-3 h-3 rounded-full bg-red-300"></div>
+                        <span class="text-xs">Over Budget</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="grid grid-cols-7 gap-2 mb-2">
+                {% for day in weekdays %}
+                <div class="text-center text-sm font-medium text-gray-500 dark:text-gray-400">{{ day }}</div>
+                {% endfor %}
+            </div>
+            
+            <div class="grid grid-cols-7 gap-2" id="calendar-days">
+                {% for day in calendar_data %}
+                <div class="aspect-square p-1">
+                    {% if day.day == 0 %}
+                    <div class="h-full"></div>
+                    {% else %}
+                    <div class="h-full rounded-lg flex flex-col items-center justify-center p-1 cursor-pointer hover:bg-opacity-80 transition-all
+                                {% if day.status == 'green' %} bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200
+                                {% elif day.status == 'yellow' %} bg-yellow-100 dark:bg-yellow-900 text-yellow-800 dark:text-yellow-200
+                                {% else %} bg-red-100 dark:bg-red-900 text-red-800 dark:text-red-200
+                                {% endif %}"
+                         onclick="showDayExpenses('{{ day.date }}')">
+                        <span class="font-medium">{{ day.day }}</span>
+                        <span class="text-xs">₹{{ day.amount|default:"0" }}</span>
+                    </div>
+                    {% endif %}
+                </div>
+                {% endfor %}
+            </div>
+            
+            <div class="mt-4 pt-3 border-t border-gray-200 dark:border-gray-700">
+                <div class="flex justify-between items-center">
+                    <span class="text-sm">Daily Budget:</span>
+                    <span class="font-medium" id="daily-budget-display">₹{{ daily_budget }}</span>
+                </div>
+                <div class="flex justify-between items-center mt-1">
+                    <span class="text-sm">Month Progress:</span>
+                    <span class="text-sm font-medium">
+                        <span id="days-completed">{{ days_completed }}</span>/<span id="total-days">{{ total_days }}</span> days
+                    </span>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Recent Transactions -->
+        <div class="card bg-white dark:bg-gray-800 p-4 rounded-xl shadow">
+            <div class="flex justify-between items-center mb-3">
+                <div class="text-lg font-medium dark:text-white">Recent Transactions</div>
+                <a href="/transactions" class="text-sm text-purple-600 dark:text-purple-400">View All</a>
+            </div>
+            <div class="space-y-3" id="recent-transactions-container">
+                <!-- Milk -->
+                <div class="flex justify-between items-start">
+                    <div class="flex items-start">
+                        <div class="w-8 h-8 rounded-full bg-green-500 flex items-center justify-center text-white mt-0.5 mr-2">
+                            <i class="fas fa-wine-bottle text-xs"></i>
+                        </div>
+                        <div>
+                            <div class="font-medium dark:text-white">Milk</div>
+                            <div class="text-xs text-gray-500">25 Jun, 08:01 pm • Food</div>
+                        </div>
+                    </div>
+                    <div class="text-red-500 font-medium">- ₹30</div>
+                </div>
+                
+                <!-- Mango 3kg -->
+                <div class="flex justify-between items-start">
+                    <div class="flex items-start">
+                        <div class="w-8 h-8 rounded-full bg-yellow-500 flex items-center justify-center text-white mt-0.5 mr-2">
+                            <i class="fas fa-apple-alt text-xs"></i>
+                        </div>
+                        <div>
+                            <div class="font-medium dark:text-white">Mango 3kg</div>
+                            <div class="text-xs text-gray-500">25 Jun, 02:28 pm • Food</div>
+                        </div>
+                    </div>
+                    <div class="text-red-500 font-medium">- ₹300</div>
+                </div>
+                
+                <!-- Popz -->
+                <div class="flex justify-between items-start">
+                    <div class="flex items-start">
+                        <div class="w-8 h-8 rounded-full bg-blue-500 flex items-center justify-center text-white mt-0.5 mr-2">
+                            <i class="fas fa-film text-xs"></i>
+                        </div>
+                        <div>
+                            <div class="font-medium dark:text-white">Popz</div>
+                            <div class="text-xs text-gray-500">16 Jun, 09:01 pm • Entertainment</div>
+                        </div>
+                    </div>
+                    <div class="text-red-500 font-medium">- ₹120</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Actions -->
+    <!-- <div class="flex flex-wrap gap-4">
+        <button class="bg-purple-600 hover:bg-purple-700 text-white px-6 py-3 rounded-lg flex items-center space-x-2 transition">
+            <i class="fas fa-plus"></i>
+            <span>Add Expense</span>
+        </button>
+        <button class="bg-white dark:bg-gray-700 hover:bg-gray-100 dark:hover:bg-gray-600 px-6 py-3 rounded-lg flex items-center space-x-2 transition">
+            <i class="fas fa-upload"></i>
+            <span>Import CSV</span>
+        </button>
+        <button class="bg-white dark:bg-gray-700 hover:bg-gray-100 dark:hover:bg-gray-600 px-6 py-3 rounded-lg flex items-center space-x-2 transition">
+            <i class="fas fa-chart-line"></i>
+            <span>View Reports</span>
+        </button>
+    </div> -->
+</div>
+
+<!-- Day Expenses Modal -->
+<div id="day-expenses-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+    <div class="bg-white dark:bg-gray-800 rounded-lg p-6 w-full max-w-md">
+        <div class="flex justify-between items-center mb-4">
+            <h3 class="font-medium dark:text-white" id="modal-date">Expenses for </h3>
+            <button onclick="closeModal()" class="text-gray-500 hover:text-gray-700 dark:hover:text-gray-300">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <div class="space-y-3 max-h-96 overflow-y-auto" id="modal-expenses-list">
+            <!-- Expenses will be loaded here -->
+        </div>
+        <div class="pt-3 mt-3 border-t border-gray-200 dark:border-gray-700">
+            <div class="flex justify-between items-center">
+                <span class="font-medium">Total:</span>
+                <span class="font-bold" id="modal-total">₹0</span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Chart.js -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script src="{% static 'js/dashboard.js' %}"></script>
+    {% block page_specific_js %}{% endblock %}
+<style>
+    /* ===== Base Styles ===== */
+    .card {
+        transition: all 0.3s ease;
+    }
+    .card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+    }
+    
+    #day-expenses-modal {
+        transition: opacity 0.3s ease;
+    }
+
+    /* ===== Improved Expense Breakdown Styles ===== */
+    /* Desktop/Laptop specific height */
+    @media (min-width: 1024px) {
+        .h-full-breakdown {
+            height: 77%;
+            min-height: 320px;
+        }
+    }
+
+    /* For medium screens (tablets) */
+    @media (max-width: 1023px) and (min-width: 768px) {
+        .h-full-breakdown {
+            height: auto;
+        }
+    }
+
+    #expense-breakdown-container {
+        max-height: 260px;
+        overflow-y: auto;
+        scrollbar-width: thin;
+        padding-right: 4px;
+    }
+
+    #expense-breakdown-container::-webkit-scrollbar {
+        width: 4px;
+    }
+
+    #expense-breakdown-container::-webkit-scrollbar-track {
+        background: #f1f1f1;
+        border-radius: 10px;
+    }
+
+    #expense-breakdown-container::-webkit-scrollbar-thumb {
+        background: #c1c1c1;
+        border-radius: 10px;
+    }
+
+    #expense-breakdown-container > div {
+        padding: 8px 10px;
+        margin-bottom: 6px;
+        border-radius: 8px;
+        border: 1px solid #f3f4f6;
+        background: #fafafa;
+        transition: all 0.2s ease;
+    }
+
+    #expense-breakdown-container > div:hover {
+        background: #f0f0f0;
+        border-color: #e5e7eb;
+        transform: translateX(2px);
+    }
+
+    #expense-breakdown-container > div:last-child {
+        margin-bottom: 0;
+    }
+
+    .dark #expense-breakdown-container > div {
+        background: #2d3748;
+        border-color: #4a5568;
+    }
+
+    .dark #expense-breakdown-container > div:hover {
+        background: #374151;
+        border-color: #6b7280;
+    }
+
+    /* Compact category items */
+    .expense-category-item {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .expense-category-icon {
+        width: 32px;
+        height: 32px;
+        min-width: 32px;
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 14px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+
+    .expense-category-info {
+        flex: 1;
+        min-width: 0;
+    }
+
+    .expense-category-name {
+        font-size: 13px;
+        font-weight: 600;
+        color: #1f2937;
+        line-height: 1.2;
+    }
+
+    .dark .expense-category-name {
+        color: #f9fafb;
+    }
+
+    .expense-category-amount {
+        font-size: 14px;
+        font-weight: 700;
+        color: #dc2626;
+        white-space: nowrap;
+    }
+
+    .dark .expense-category-amount {
+        color: #f87171;
+    }
+
+    .expense-category-percentage {
+        font-size: 10px;
+        color: #6b7280;
+        margin-top: 2px;
+    }
+
+    .dark .expense-category-percentage {
+        color: #9ca3af;
+    }
+
+    /* ===== Daily Spend Tracker Fixes ===== */
+    #calendar-days {
+        display: grid;
+        grid-template-columns: repeat(7, minmax(0, 1fr));
+        gap: 3px;
+    }
+    
+    .aspect-square {
+        position: relative;
+        width: 100%;
+    }
+    
+    .aspect-square::before {
+        content: "";
+        display: block;
+        padding-bottom: 100%;
+    }
+    
+    .aspect-square > div {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        padding: 1px;
+        border-radius: 6px;
+        font-size: 11px;
+    }
+    
+    .aspect-square > div > span:first-child {
+        font-weight: 600;
+        font-size: 12px;
+        line-height: 1;
+    }
+    
+    .aspect-square > div > span:last-child {
+        font-size: 9px;
+        margin-top: 1px;
+        opacity: 0.9;
+    }
+
+    /* ===== Recent Transactions Improvements ===== */
+    #recent-transactions-container > div {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 10px 0;
+        border-bottom: 1px solid #e5e7eb;
+        gap: 12px;
+    }
+    
+    #recent-transactions-container > div:last-child {
+        border-bottom: none;
+    }
+    
+    #recent-transactions-container .font-medium {
+        font-size: 14px;
+        font-weight: 600;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        display: block;
+        color: #1f2937;
+    }
+    
+    .dark #recent-transactions-container .font-medium {
+        color: #f9fafb;
+    }
+    
+    #recent-transactions-container .text-sm {
+        font-size: 11px;
+        color: #6b7280;
+        display: flex;
+        align-items: center;
+        margin-top: 2px;
+        gap: 4px;
+    }
+    
+    #recent-transactions-container .text-red-500 {
+        font-weight: 700;
+        font-size: 14px;
+        white-space: nowrap;
+    }
+
+    .transaction-icon {
+        width: 34px;
+        height: 34px;
+        min-width: 34px;
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 13px;
+    }
+
+    /* ===== Mobile Responsive Overhaul ===== */
+    @media (max-width: 768px) {
+        /* General layout adjustments */
+        .space-y-6 {
+            gap: 1.25rem !important;
+        }
+        
+        .gap-6 {
+            gap: 0.75rem !important;
+        }
+        
+        /* Cards */
+        .card {
+            padding: 0.875rem !important;
+        }
+        
+        /* Remove fixed height on mobile */
+        .h-full-breakdown {
+            height: auto !important;
+        }
+        
+        /* Expense Breakdown for mobile */
+        #expense-breakdown-container {
+            max-height: 200px;
+            gap: 4px;
+        }
+
+        #expense-breakdown-container > div {
+            padding: 6px 8px;
+            margin-bottom: 4px;
+        }
+
+        .expense-category-icon {
+            width: 28px;
+            height: 28px;
+            min-width: 28px;
+            font-size: 12px;
+        }
+
+        .expense-category-name {
+            font-size: 12px;
+        }
+
+        .expense-category-amount {
+            font-size: 13px;
+        }
+
+        .expense-category-percentage {
+            font-size: 9px;
+        }
+        
+        /* Daily Spend Tracker */
+        #calendar-days {
+            gap: 2px !important;
+        }
+        
+        .aspect-square > div {
+            padding: 0 !important;
+        }
+        
+        .aspect-square > div > span:first-child {
+            font-size: 11px !important;
+        }
+        
+        .aspect-square > div > span:last-child {
+            font-size: 8px !important;
+            margin-top: 0;
+        }
+        
+        /* Month navigation */
+        #prev-month, #next-month {
+            padding: 0.25rem 0.4rem !important;
+            font-size: 10px;
+        }
+        
+        /* Budget indicators */
+        .w-3.h-3 {
+            width: 8px !important;
+            height: 8px !important;
+        }
+
+        .budget-indicators span {
+            font-size: 10px;
+        }
+        
+        /* Recent Transactions */
+        #recent-transactions-container > div {
+            padding: 8px 0 !important;
+            gap: 8px;
+        }
+        
+        #recent-transactions-container .font-medium {
+            font-size: 13px !important;
+        }
+        
+        #recent-transactions-container .text-sm {
+            font-size: 10px !important;
+            gap: 3px;
+        }
+        
+        .transaction-icon {
+            width: 30px;
+            height: 30px;
+            min-width: 30px;
+            font-size: 12px;
+        }
+        
+        #recent-transactions-container .text-red-500 {
+            font-size: 13px !important;
+        }
+        
+        /* Balance Card */
+        .text-4xl {
+            font-size: 1.5rem !important;
+        }
+        
+        .text-lg {
+            font-size: 0.9rem !important;
+        }
+        
+        /* Budget Summary */
+        .text-xl {
+            font-size: 1rem !important;
+        }
+        
+        #current-month {
+            font-size: 0.8rem !important;
+            padding: 0 0.4rem !important;
+        }
+        
+        .weekdays {
+            font-size: 0.65rem !important;
+        }
+    }
+
+    /* Extra small devices (below 400px) */
+    @media (max-width: 400px) {
+        .aspect-square > div > span:first-child {
+            font-size: 10px !important;
+        }
+        
+        #recent-transactions-container .font-medium {
+            font-size: 12px !important;
+        }
+        
+        #recent-transactions-container .text-sm {
+            font-size: 9px !important;
+        }
+        
+        .transaction-icon {
+            width: 26px;
+            height: 26px;
+            min-width: 26px;
+            font-size: 11px;
+        }
+
+        /* Compact grid for expense breakdown on very small screens */
+        #expense-breakdown-container {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 6px;
+        }
+
+        #expense-breakdown-container > div {
+            margin-bottom: 0;
+            height: 100%;
+        }
+
+        .expense-category-item {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 4px;
+        }
+
+        .expense-category-icon {
+            width: 24px;
+            height: 24px;
+            font-size: 11px;
+        }
+
+        .expense-category-name {
+            font-size: 11px;
+        }
+
+        .expense-category-amount {
+            font-size: 12px;
+        }
+    }
+
+    /* Tablet view (768px to 1023px) */
+    @media (max-width: 1023px) and (min-width: 769px) {
+        .h-full-breakdown {
+            height: auto;
+            min-height: 280px;
+        }
+        
+        .grid-cols-3 {
+            grid-template-columns: repeat(3, 1fr);
+        }
+    }
+</style>
+{% endblock %}

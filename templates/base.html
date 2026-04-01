@@ -1,0 +1,1325 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>{% block title %}FinDash | Expense Tracker{% endblock %}</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/ua-parser-js@1.0.35/src/ua-parser.min.js"></script>
+
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        primary: {
+                            600: '#6c5ce7',
+                            700: '#5649c0'
+                        },
+                        secondary: '#a29bfe',
+                        dark: '#2d3436',
+                        light: '#f5f6fa',
+                        success: '#00b894',
+                        danger: '#d63031',
+                        warning: '#fdcb6e'
+                    },
+                    animation: {
+                        'slide-in': 'slideIn 0.3s ease-out',
+                        'fade-out': 'fadeOut 0.3s ease-out 2.7s'
+                    }
+                }
+            }
+        }
+    </script>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>💰</text></svg>">
+
+    
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- DataTables CSS -->
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css">
+    <style>
+        /* Improved sidebar with smooth transitions */
+        .sidebar {
+            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            width: 290px;
+            background: white;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
+            z-index: 1050;
+            height: 100vh;
+            position: fixed;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .sidebar-content {
+            flex: 1;
+            overflow-y: auto;
+            padding-bottom: 80px;
+        }
+
+        .sidebar-footer {
+            padding: 1rem;
+            border-top: 1px solid #e2e8f0;
+            background: white;
+            position: relative;
+            z-index: 10;
+        }
+
+        .dark .sidebar {
+            background: #1e293b;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.3);
+        }
+
+        .dark .sidebar-footer {
+            background: #1e293b;
+            border-top-color: #334155;
+        }
+        
+        /* Enhanced navigation items */
+        .nav-item {
+            margin: 8px 12px;
+            padding: 12px 16px;
+            border-radius: 8px;
+            transition: all 0.2s ease;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+        }
+
+        .nav-item:hover {
+            background: #a29bfe;
+            color: white;
+            transform: translateX(4px);
+        }
+
+        .nav-item.active {
+            background: #6c5ce7;
+            color: white;
+            font-weight: 500;
+            box-shadow: 0 4px 6px -1px rgba(108, 92, 231, 0.3);
+        }
+
+        .nav-item i {
+            transition: transform 0.2s ease;
+            width: 24px;
+            text-align: center;
+            margin-right: 12px;
+        }
+
+        .nav-item:hover i {
+            transform: scale(1.1);
+        }
+
+        /* Mobile responsiveness */
+        @media (max-width: 1024px) {
+            .sidebar {
+                transform: translateX(-100%);
+                width: 280px;
+            }
+            
+            .sidebar.active {
+                transform: translateX(0);
+                box-shadow: 4px 0 15px rgba(0,0,0,0.2);
+            }
+            
+            .sidebar-overlay {
+                position: fixed;
+                top: 0;
+                left: 0;
+                right: 0;
+                bottom: 0;
+                background: rgba(0,0,0,0.5);
+                z-index: 1040;
+                opacity: 0;
+                visibility: hidden;
+                transition: all 0.3s ease;
+            }
+            
+            .sidebar-overlay.active {
+                opacity: 1;
+                visibility: visible;
+            }
+            
+            .mobile-menu-btn {
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                width: 44px;
+                height: 44px;
+                z-index: 1051;
+            }
+            
+            .main-content {
+                margin-left: 0 !important;
+                width: 100%;
+            }
+        }
+
+        /* Improved user profile section */
+        .user-profile {
+            transition: all 0.3s ease;
+            position: relative;
+            display: flex;
+                align-items: center;
+            padding: 12px;
+            border-radius: 8px;
+        }
+
+        .user-profile:hover {
+            background: rgba(108, 92, 231, 0.1);
+        }
+
+        .user-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 2px solid #6c5ce7;
+            margin-right: 12px;
+        }
+
+        .user-info {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .user-name {
+            font-weight: 500;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .user-email {
+            font-size: 0.8rem;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        /* Enhanced main content area */
+        .main-content {
+            transition: margin-left 0.3s ease;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .top-bar {
+            background: white;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+            padding: 1rem;
+            position: sticky;
+            top: 0;
+            z-index: 990;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .dark .top-bar {
+            background: #1e293b;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+        }
+
+        .page-content {
+            flex: 1;
+            padding: 1.5rem;
+        }
+
+        /* Header improvements */
+        .header-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: #2d3436;
+        }
+
+        #greetingText {
+            font-weight: 500;
+            color: #4b5563;
+        }
+
+        .dark #greetingText {
+            color: #9ca3af;
+        }
+
+        .dark .header-title {
+            color: #f8fafc;
+        }
+
+        .header-actions {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        /* Recent transactions section */
+        .transactions-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+        }
+
+        .transactions-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: #2d3436;
+        }
+
+        .dark .transactions-title {
+            color: #f8fafc;
+        }
+
+        .view-all-link {
+            color: #6c5ce7;
+            font-weight: 500;
+            text-decoration: none;
+            transition: color 0.2s;
+        }
+
+        .dark .view-all-link {
+            color: #a29bfe;
+        }
+
+        .view-all-link:hover {
+            color: #5649c0;
+        }
+
+        .transaction-list {
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+        }
+
+        .transaction-item {
+            background: white;
+            border-radius: 12px;
+            padding: 1rem 1.25rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            transition: all 0.2s ease;
+        }
+
+        .dark .transaction-item {
+            background: #1e293b;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+
+        .transaction-item:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+
+        .transaction-info {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            flex: 1;
+        }
+
+        .transaction-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: #f0f2f5;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #6c5ce7;
+        }
+
+        .dark .transaction-icon {
+            background: #334155;
+        }
+
+        .transaction-details {
+            flex: 1;
+        }
+
+        .transaction-name {
+            font-weight: 500;
+            margin-bottom: 0.25rem;
+            color: #2d3436;
+        }
+
+        .dark .transaction-name {
+            color: #f8fafc;
+        }
+
+        .transaction-meta {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.875rem;
+            color: #64748b;
+        }
+
+        .transaction-category {
+            background: #f1f5f9;
+            padding: 0.25rem 0.5rem;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            color: #64748b;
+        }
+
+        .dark .transaction-category {
+            background: #334155;
+            color: #94a3b8;
+        }
+
+        .transaction-amount {
+            font-weight: 600;
+            color: #d63031;
+        }
+
+        .income .transaction-amount {
+            color: #00b894;
+        }
+
+        /* Improved buttons and actions */
+        .action-button {
+            transition: all 0.2s ease;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .action-button:hover {
+            transform: translateY(-1px);
+        }
+
+        .action-button:active {
+            transform: translateY(0);
+        }
+
+        .notification-btn {
+            position: relative;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+        }
+
+        .notification-badge {
+            position: absolute;
+            top: 2px;
+            right: 2px;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #d63031;
+        }
+
+        .add-expense-btn {
+            padding: 0.5rem 1rem;
+        }
+
+        /* Enhanced transaction cards */
+        .transaction-card {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+            padding: 1.25rem;
+            margin-bottom: 1rem;
+            transition: all 0.2s ease;
+        }
+
+        .transaction-card:hover {
+            box-shadow: 0 6px 12px rgba(0,0,0,0.1);
+            transform: translateY(-2px);
+        }
+
+        .dark .transaction-card {
+            background: #1e293b;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.2);
+        }
+
+        .category-badge {
+            padding: 0.25rem 0.75rem;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 500;
+            display: inline-flex;
+            align-items: center;
+        }
+        
+        .income-badge {
+            background-color: rgba(0, 184, 148, 0.1);
+            color: #00b894;
+        }
+        
+        .expense-badge {
+            background-color: rgba(214, 48, 49, 0.1);
+            color: #d63031;
+        }
+
+        /* Improved receipt preview */
+        .receipt-preview {
+            width: 60px;
+            height: 60px;
+            object-fit: cover;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            border: 1px solid #e2e8f0;
+        }
+        
+        .receipt-preview:hover {
+            transform: scale(1.8);
+            z-index: 100;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.15);
+        }
+
+        /* Enhanced bulk actions bar */
+        .bulk-actions-bar {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: white;
+            padding: 1rem;
+            box-shadow: 0 -5px 15px rgba(0,0,0,0.1);
+            transform: translateY(100%);
+            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            z-index: 1000;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        
+        .bulk-actions-bar.show {
+            transform: translateY(0);
+        }
+
+        .dark .bulk-actions-bar {
+            background: #1e293b;
+            box-shadow: 0 -5px 15px rgba(0,0,0,0.3);
+        }
+
+        /* Improved modal styles */
+        .modal-content {
+            border-radius: 12px;
+            overflow: hidden;
+            border: none;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+        }
+
+        .dark .modal-content {
+            background: #1e293b;
+            color: #f8fafc;
+        }
+
+        .modal-header {
+            border-bottom: 1px solid #e9ecef;
+            padding: 1.25rem 1.5rem;
+        }
+
+        .dark .modal-header {
+            border-bottom-color: #334155;
+        }
+
+        .modal-title {
+            font-weight: 600;
+            color: #2d3436;
+        }
+
+        .dark .modal-title {
+            color: #f8fafc;
+        }
+
+        .modal-body {
+            padding: 1.5rem;
+        }
+
+        .modal-footer {
+            border-top: 1px solid #e9ecef;
+            padding: 1rem 1.5rem;
+        }
+
+        .dark .modal-footer {
+            border-top-color: #334155;
+        }
+
+        /* Enhanced form controls */
+        .form-control, .form-select {
+            border-radius: 8px;
+            padding: 0.5rem 0.75rem;
+            border: 1px solid #e2e8f0;
+            transition: all 0.2s ease;
+        }
+
+        .form-control:focus, .form-select:focus {
+            border-color: #6c5ce7;
+            box-shadow: 0 0 0 0.25rem rgba(108, 92, 231, 0.25);
+        }
+
+        .dark .form-control, .dark .form-select {
+            background: #1e293b;
+            border-color: #334155;
+            color: #f8fafc;
+        }
+
+        /* Add this CSS in your style section */
+
+        /* When expense is checked, style expense label */
+        #expenseType:checked + label[for="expenseType"] {
+            border-color: #ef4444 !important;
+            background-color: #fef2f2 !important;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1) !important;
+        }
+
+        .dark #expenseType:checked + label[for="expenseType"] {
+            background-color: rgba(239, 68, 68, 0.1) !important;
+            border-color: #ef4444 !important;
+        }
+
+        /* When income is checked, style income label */
+        #incomeType:checked + label[for="incomeType"] {
+            border-color: #10b981 !important;
+            background-color: #f0fdf4 !important;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1) !important;
+        }
+
+        .dark #incomeType:checked + label[for="incomeType"] {
+            background-color: rgba(16, 185, 129, 0.1) !important;
+            border-color: #10b981 !important;
+        }
+
+        /* When expense is checked, ensure income label has default style */
+        #expenseType:checked ~ #incomeType + label[for="incomeType"] {
+            border-color: #e5e7eb !important;
+            background-color: white !important;
+            box-shadow: none !important;
+        }
+
+        .dark #expenseType:checked ~ #incomeType + label[for="incomeType"] {
+            border-color: #374151 !important;
+            background-color: #1f2937 !important;
+        }
+
+        /* When income is checked, ensure expense label has default style */
+        #incomeType:checked ~ #expenseType + label[for="expenseType"] {
+            border-color: #e5e7eb !important;
+            background-color: white !important;
+            box-shadow: none !important;
+        }
+
+        .dark #incomeType:checked ~ #expenseType + label[for="expenseType"] {
+            border-color: #374151 !important;
+            background-color: #1f2937 !important;
+        }        
+
+        /* Responsive improvements */
+        @media (max-width: 768px) {
+            .modal-dialog {
+                margin: 0.5rem auto;
+                max-width: 95%;
+            }
+            
+            .modal-body .row {
+                flex-direction: column;
+            }
+            
+            .modal-body .col-md-6 {
+                width: 100%;
+                margin-bottom: 1rem;
+            }
+            
+            .transaction-table {
+                display: block;
+                overflow-x: auto;
+                white-space: nowrap;
+            }
+            
+            .transaction-card {
+                padding: 1rem;
+            }
+            
+            .page-content {
+                padding: 1rem;
+            }
+
+            .transaction-item {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 1rem;
+            }
+
+            .transaction-info {
+                width: 100%;
+            }
+
+            .transaction-amount {
+                align-self: flex-end;
+            }
+
+            .add-expense-btn {
+                padding: 0.5rem;
+            }
+
+            .add-expense-btn span {
+                display: none;
+            }
+        }
+
+        @media (max-width: 640px) {
+            .transaction-item {
+                padding: 0.75rem;
+            }
+            
+            .transaction-icon {
+                width: 32px;
+                height: 32px;
+                font-size: 0.8rem;
+            }
+            
+            .transaction-name {
+                font-size: 0.9rem;
+            }
+            
+            .transaction-meta {
+                font-size: 0.75rem;
+                flex-wrap: wrap;
+            }
+            
+            .header-title {
+                font-size: 1rem;
+            }
+            
+            #greetingText, #greetingName {
+                display: block;
+                white-space: nowrap;
+                overflow: hidden;
+                text-overflow: ellipsis;
+                max-width: 120px;
+            }
+            
+            .notification-btn, .add-expense-btn {
+                width: 36px;
+                height: 36px;
+            }
+            
+            .add-expense-btn i {
+                margin-right: 0;
+            }
+        }
+
+        /* Animation enhancements */
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        @keyframes slideIn {
+            from { transform: translateY(10px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+
+        .animate-fade-in {
+            animation: fadeIn 0.3s ease-out;
+        }
+
+        .animate-slide-in {
+            animation: slideIn 0.3s ease-out;
+        }
+
+        /* Loading spinner */
+        .loading-spinner {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(108, 92, 231, 0.3);
+            border-radius: 50%;
+            border-top-color: #6c5ce7;
+            animation: spin 1s ease-in-out infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        
+        /* Button loading state */
+        .btn-loading {
+            position: relative;
+            color: transparent !important;
+        }
+
+        .btn-loading::after {
+            content: '';
+            position: absolute;
+            width: 20px;
+            height: 20px;
+            top: 50%;
+            left: 50%;
+            margin-left: -10px;
+            margin-top: -10px;
+            border: 2px solid rgba(255,255,255,0.3);
+            border-top-color: white;
+            border-radius: 50%;
+            animation: btn-spinner 0.8s linear infinite;
+        }
+
+        @keyframes btn-spinner {
+            to { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body class="bg-gray-50 dark:bg-gray-900">
+    <!-- Mobile Menu Overlay -->
+    <div id="sidebarOverlay" class="sidebar-overlay"></div>
+
+    <!-- Mobile Menu Button -->
+    <button id="mobileMenuBtn" class="lg:hidden fixed top-4 left-4 z-[1051] mobile-menu-btn rounded-full bg-primary-600 text-white shadow-lg hover:bg-primary-700 transition-all focus:outline-none focus:ring-2 focus:ring-primary-600 focus:ring-offset-2">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M3 12H21" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M3 6H21" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M3 18H21" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+    </button>
+
+    <!-- Sidebar -->
+    <div class="sidebar dark:bg-gray-800">
+        <div class="sidebar-content">
+            <!-- App Logo -->
+            <div class="p-6 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between">
+                <div class="flex items-center space-x-3">
+                    <div class="w-10 h-10 rounded-full bg-primary-600 flex items-center justify-center text-white shadow-md">
+                        <i class="fas fa-wallet text-xl"></i>
+                    </div>
+                    <span class="text-xl font-bold dark:text-white">FinDash</span>
+                </div>
+                <button id="closeSidebar" class="lg:hidden text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 p-1 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
+                    <i class="fas fa-times text-lg"></i>
+                </button>
+            </div>
+
+            <!-- Navigation -->
+            <nav class="p-4">
+                <ul class="space-y-1">
+                    <li class="nav-item">
+                        <a href="/dashboard" class="flex items-center w-full">
+                            <i class="fas fa-home"></i>
+                            <span class="text-md">Dashboard</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="/analytics" class="flex items-center w-full">
+                            <i class="fas fa-chart-pie"></i>
+                            <span class="text-md">Analytics</span>
+                        </a>
+                    </li>
+                    <li class="nav-item active">
+                        <a href="/transactions" class="flex items-center w-full">
+                            <i class="fas fa-exchange-alt"></i>
+                            <span class="text-md">Transactions</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="/profile" class="flex items-center w-full">
+                            <i class="fas fa-user-cog"></i>
+                            <span class="text-md">Settings</span>
+                        </a>
+                    </li>
+                </ul>
+            </nav>
+        </div>
+
+        <!-- User Profile Section -->
+        <div class="sidebar-footer dark:bg-gray-800">
+            <div class="user-profile" id="userProfileBox">
+                <img id="userAvatar" 
+                    class="user-avatar" 
+                    src="" 
+                    alt="User"
+                    onerror="this.src='https://ui-avatars.com/api/?name=U&background=6c5ce7&color=fff'">
+                <div class="user-info">
+                    <p class="user-name dark:text-white" id="userName">Saqib</p>
+                    <p class="user-email text-gray-500 dark:text-gray-400" id="userEmail">saqib@example.com</p>
+                </div>
+                <form id="logoutForm">
+                    {% csrf_token %}
+                    <button type="submit" class="ml-2 flex items-center justify-center w-10 h-10 rounded-full bg-red-500/10 hover:bg-red-500/20 text-red-600 dark:text-red-400 transition-colors focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2">
+                        <i class="fas fa-sign-out-alt"></i>
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="main-content ml-0 lg:ml-[290px]">
+        <!-- Top Bar -->
+        <header class="top-bar dark:bg-gray-800">
+            <div class="flex items-center justify-between w-full">
+                <h1 class="header-title dark:text-white">
+                    <span id="greetingText">Hello </span>,  
+                    <span class="text-primary-600" id="greetingName">Saqib</span>
+                </h1>
+                <div class="header-actions">
+                    <button class="notification-btn p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 relative">
+                        <i class="fas fa-bell text-gray-600 dark:text-gray-300"></i>
+                        <span class="notification-badge"></span>
+                    </button>
+                    <button class="add-expense-btn bg-primary-600 text-white p-2 rounded-lg hover:bg-primary-700 transition flex items-center shadow-md hover:shadow-lg" data-bs-toggle="modal" data-bs-target="#addTransactionModal">
+                        <i class="fas fa-plus"></i> 
+                        <span class="hidden sm:inline ml-1">Add</span>
+                    </button>
+                </div>
+            </div>
+        </header>
+
+        <!-- Page Content -->
+        <main class="page-content bg-gray-50 dark:bg-gray-900">
+            {% block content %}
+            <!-- Default content that matches your image -->
+            <div class="container mx-auto">
+                <!-- Recent Transactions Section -->
+                <div class="transactions-section">
+                    <div class="transactions-header">
+                        <h2 class="transactions-title dark:text-white">Recent Transactions</h2>
+                        <a href="/transactions" class="view-all-link">View All</a>
+                    </div>
+                    
+                    <div class="transaction-list">
+                        <!-- Transaction 1 -->
+                        <div class="transaction-item">
+                            <div class="transaction-info">
+                                <div class="transaction-icon">
+                                    <i class="fas fa-utensils"></i>
+                                </div>
+                                <div class="transaction-details">
+                                    <h3 class="transaction-name dark:text-white">Mango 3kg</h3>
+                                    <div class="transaction-meta">
+                                        <span>25 Jun, 02:28 pm</span>
+                                        <span>•</span>
+                                        <span class="transaction-category">Food</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="transaction-amount">-₹120</div>
+                        </div>
+                        
+                        <!-- Transaction 2 -->
+                        <div class="transaction-item">
+                            <div class="transaction-info">
+                                <div class="transaction-icon">
+                                    <i class="fas fa-bus"></i>
+                                </div>
+                                <div class="transaction-details">
+                                    <h3 class="transaction-name dark:text-white">Ticket</h3>
+                                    <div class="transaction-meta">
+                                        <span>12 Jun, 08:42 pm</span>
+                                        <span>•</span>
+                                        <span class="transaction-category">Transportation</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="transaction-amount">-₹45</div>
+                        </div>
+                        
+                        <!-- Transaction 3 -->
+                        <div class="transaction-item">
+                            <div class="transaction-info">
+                                <div class="transaction-icon">
+                                    <i class="fas fa-film"></i>
+                                </div>
+                                <div class="transaction-details">
+                                    <h3 class="transaction-name dark:text-white">Popz</h3>
+                                    <div class="transaction-meta">
+                                        <span>16 Jun, 09:01 pm</span>
+                                        <span>•</span>
+                                        <span class="transaction-category">Entertainment</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="transaction-amount">-₹250</div>
+                        </div>
+                        
+                        <!-- Transaction 4 -->
+                        <div class="transaction-item">
+                            <div class="transaction-info">
+                                <div class="transaction-icon">
+                                    <i class="fas fa-ice-cream"></i>
+                                </div>
+                                <div class="transaction-details">
+                                    <h3 class="transaction-name dark:text-white">Ice cream</h3>
+                                    <div class="transaction-meta">
+                                        <span>16 Jun, 09:00 pm</span>
+                                        <span>•</span>
+                                        <span class="transaction-category">Food</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="transaction-amount">-₹60</div>
+                        </div>
+                        
+                        <!-- Transaction 5 -->
+                        <div class="transaction-item income">
+                            <div class="transaction-info">
+                                <div class="transaction-icon">
+                                    <i class="fas fa-money-bill-wave"></i>
+                                </div>
+                                <div class="transaction-details">
+                                    <h3 class="transaction-name dark:text-white">Data Pack</h3>
+                                    <div class="transaction-meta">
+                                        <span>15 Jun, 04:33 pm</span>
+                                        <span>•</span>
+                                        <span class="transaction-category">Sisters</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="transaction-amount">+₹500</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endblock %}
+        </main>
+    </div>
+
+<!-- Add Transaction Modal -->
+<div class="modal fade" id="addTransactionModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <form id="transactionForm" enctype="multipart/form-data" class="modal-content border-0 shadow-lg">
+            <!-- Modal Header - Compact with subtle gradient -->
+            <div class="modal-header bg-gradient-to-r from-primary-600 to-purple-600 text-white p-4 sm:p-5 rounded-t-xl">
+                <div class="flex items-center justify-between w-full">
+                    <div class="flex items-center space-x-3">
+                        <div class="w-8 h-8 sm:w-10 sm:h-10 rounded-lg bg-white/20 flex items-center justify-center backdrop-blur-sm">
+                            <i class="fas fa-wallet text-sm sm:text-base"></i>
+                        </div>
+                        <div>
+                            <h5 class="modal-title text-base sm:text-lg font-semibold">Add Transaction</h5>
+                            <p class="text-xs opacity-90 mt-0.5">Track your income & expenses</p>
+                        </div>
+                    </div>
+                    <button type="button" 
+                            class="btn-close btn-close-white opacity-90 hover:opacity-100 transition-all duration-150 scale-100 hover:scale-110 p-2"
+                            data-bs-dismiss="modal" 
+                            aria-label="Close"></button>
+                </div>
+            </div>
+
+            <!-- Modal Body -->
+            <div class="modal-body p-4 sm:p-6 max-h-[65vh] overflow-y-auto">
+                <!-- Transaction Type Toggle - Compact -->
+                <!-- Transaction Type Toggle - Compact -->
+                <div class="bg-gradient-to-br from-gray-50 to-white dark:from-gray-800 dark:to-gray-900 p-3 rounded-xl border border-gray-100 dark:border-gray-700">
+                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                        <i class="fas fa-exchange-alt mr-2 text-primary-600"></i>Transaction Type
+                    </label>
+                    <div class="grid grid-cols-2 gap-2">
+                        <!-- Expense Option -->
+                        <div class="relative">
+                            <input type="radio" class="hidden" name="type" id="expenseType" value="expenses" checked>
+                            <label for="expenseType" 
+                                id="expenseLabel"
+                                class="block cursor-pointer text-center p-3 rounded-lg border-2 transition-all duration-200 
+                                        bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
+                                <div class="w-8 h-8 rounded-full bg-red-100 dark:bg-red-900/30 flex items-center justify-center mx-auto mb-1.5">
+                                    <i class="fas fa-arrow-up text-red-500 dark:text-red-400 text-sm"></i>
+                                </div>
+                                <span class="text-sm font-medium text-gray-800 dark:text-gray-200 block">Expense</span>
+                                <p class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">Money Out</p>
+                            </label>
+                        </div>
+
+                        <!-- Income Option -->
+                        <div class="relative">
+                            <input type="radio" class="hidden" name="type" id="incomeType" value="income">
+                            <label for="incomeType" 
+                                id="incomeLabel"
+                                class="block cursor-pointer text-center p-3 rounded-lg border-2 transition-all duration-200
+                                        bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
+                                <div class="w-8 h-8 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center mx-auto mb-1.5">
+                                    <i class="fas fa-arrow-down text-green-500 dark:text-green-400 text-sm"></i>
+                                </div>
+                                <span class="text-sm font-medium text-gray-800 dark:text-gray-200 block">Income</span>
+                                <p class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">Money In</p>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Date and Amount - Compact Grid -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-4">
+                    <!-- Date Picker -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
+                            <i class="far fa-calendar mr-1.5 text-primary-600"></i>Date
+                        </label>
+                        <div class="relative">
+                            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                <i class="fas fa-calendar-alt text-gray-400 text-sm"></i>
+                            </div>
+                            <input type="date" name="date" 
+                                   class="w-full pl-10 pr-3 py-2.5 text-sm border border-gray-300 dark:border-gray-600 rounded-lg 
+                                          focus:ring-2 focus:ring-primary-500 focus:border-transparent 
+                                          dark:bg-gray-800 dark:text-white transition-all"
+                                   value="{{ now|date:'Y-m-d' }}"
+                                   max="{{ now|date:'Y-m-d' }}"
+                                   required>
+                        </div>
+                    </div>
+
+                    <!-- Amount Input -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
+                            <i class="fas fa-rupee-sign mr-1.5 text-primary-600"></i>Amount
+                        </label>
+                        <div class="relative">
+                            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                <span class="text-gray-500 dark:text-gray-400">₹</span>
+                            </div>
+                            <input type="number" name="amount" 
+                                   class="w-full pl-10 pr-3 py-2.5 text-sm border border-gray-300 dark:border-gray-600 rounded-lg 
+                                          focus:ring-2 focus:ring-primary-500 focus:border-transparent 
+                                          dark:bg-gray-800 dark:text-white transition-all"
+                                   placeholder="0.00" 
+                                   step="0.01" 
+                                   min="0.01"
+                                   required>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Category Selection -->
+                <div id="categorySection" class="mt-4">
+                    <div class="flex items-center justify-between mb-2">
+                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                            <i class="fas fa-tags mr-1.5 text-primary-600"></i>Category
+                        </label>
+                        <span id="categoriesCount" class="text-xs text-gray-500 dark:text-gray-400">
+                            <span id="selectedCount">0</span> selected
+                        </span>
+                    </div>
+                    
+                    <!-- Selected Category Preview -->
+                    <div id="selectedCategoryPreview" class="hidden mb-3">
+                        <div class="bg-primary-50 dark:bg-primary-900/20 p-3 rounded-lg border border-primary-200 dark:border-primary-800">
+                            <div class="flex items-center justify-between">
+                                <div class="flex items-center space-x-2">
+                                    <div id="selectedCategoryIcon" 
+                                         class="w-10 h-10 rounded-lg flex items-center justify-center bg-primary-100 dark:bg-primary-800">
+                                    </div>
+                                    <div>
+                                        <span id="selectedCategoryName" class="text-sm font-medium text-gray-900 dark:text-white"></span>
+                                        <p class="text-xs text-primary-600 dark:text-primary-400 mt-0.5">
+                                            <i class="fas fa-check-circle mr-1"></i> Selected
+                                        </p>
+                                    </div>
+                                </div>
+                                <button type="button" 
+                                        onclick="clearCategorySelection()" 
+                                        class="text-gray-400 hover:text-red-500 dark:hover:text-red-400 
+                                               transition-colors p-1.5 hover:bg-red-50 dark:hover:bg-red-900/20 rounded">
+                                    <i class="fas fa-times"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Category Search -->
+                    <div class="relative mb-2">
+                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                            <i class="fas fa-search text-gray-400 text-sm"></i>
+                        </div>
+                        <input type="text" 
+                               id="categorySearch" 
+                               class="w-full pl-10 pr-8 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg 
+                                      focus:ring-2 focus:ring-primary-500 focus:border-transparent 
+                                      dark:bg-gray-800 dark:text-white placeholder-gray-400"
+                               placeholder="Search categories...">
+                    </div>
+
+                    <!-- Categories Grid -->
+                    <div id="categoriesGrid" 
+                         class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2 max-h-48 overflow-y-auto 
+                                p-2 border border-gray-200 dark:border-gray-700 rounded-lg bg-gray-50 dark:bg-gray-800/50">
+                        <!-- Categories will be loaded here -->
+                    </div>
+
+                    <!-- Hidden Inputs -->
+                    <input type="hidden" name="category" id="selectedCategory" value="">
+                    <input type="hidden" id="selectedCategoryId" name="category_id" value="">
+                </div>
+
+                <!-- Description -->
+                <div class="mt-4">
+                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
+                        <i class="fas fa-align-left mr-1.5 text-primary-600"></i>Description
+                    </label>
+                    <input type="text" 
+                           name="description" 
+                           class="w-full px-3 py-2.5 text-sm border border-gray-300 dark:border-gray-600 rounded-lg 
+                                  focus:ring-2 focus:ring-primary-500 focus:border-transparent 
+                                  dark:bg-gray-800 dark:text-white placeholder-gray-400"
+                           placeholder="Enter transaction description...">
+                </div>
+
+                <!-- Payment Method and Receipt -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-4">
+                    <!-- Payment Method -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
+                            <i class="fas fa-credit-card mr-1.5 text-primary-600"></i>Payment Method
+                        </label>
+                        <div class="relative">
+                            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                <i class="fas fa-wallet text-gray-400 text-sm"></i>
+                            </div>
+                            <select name="payment_method" 
+                                    class="w-full pl-10 pr-8 py-2.5 text-sm appearance-none border border-gray-300 dark:border-gray-600 rounded-lg 
+                                           focus:ring-2 focus:ring-primary-500 focus:border-transparent 
+                                           dark:bg-gray-800 dark:text-white bg-white"
+                                    required>
+                                <option value="">Select Method</option>
+                                <option value="cash">💵 Cash</option>
+                                <option value="upi">📱 UPI</option>
+                                <option value="debit">💳 Debit Card</option>
+                                <option value="credit">💳 Credit Card</option>
+                                <option value="bank">🏦 Bank Transfer</option>
+                                <option value="wallet">👛 Digital Wallet</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Receipt Upload -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
+                            <i class="fas fa-receipt mr-1.5 text-primary-600"></i>Receipt (Optional)
+                        </label>
+                        <div class="relative">
+                            <input type="file" 
+                                   name="receipt" 
+                                   id="receiptInput"
+                                   class="w-full px-3 py-2.5 text-sm border border-gray-300 dark:border-gray-600 rounded-lg 
+                                          focus:ring-2 focus:ring-primary-500 focus:border-transparent 
+                                          dark:bg-gray-800 dark:text-white 
+                                          file:mr-3 file:py-1.5 file:px-3 file:rounded file:border-0 
+                                          file:text-xs file:font-medium file:bg-primary-100 file:text-primary-700 
+                                          dark:file:bg-primary-900/40 dark:file:text-primary-300 
+                                          hover:file:bg-primary-200 dark:hover:file:bg-primary-900/60"
+                                   accept="image/*,.pdf,.doc,.docx"
+                                   onchange="previewReceiptName(this)">
+                        </div>
+                        <div id="receiptFileName" class="mt-1 text-xs text-gray-500 dark:text-gray-400 hidden"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Modal Footer -->
+            <div class="modal-footer p-4 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50 rounded-b-xl">
+                <div class="flex gap-3 w-full">
+                    <button type="button" 
+                            class="flex-1 px-4 py-2.5 text-sm font-medium border border-gray-300 dark:border-gray-600 
+                                   text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 
+                                   transition-all flex items-center justify-center"
+                            data-bs-dismiss="modal">
+                        <i class="fas fa-times mr-2"></i> Cancel
+                    </button>
+                    <button type="submit"
+                            id="saveTransaction"
+                            class="flex-1 px-4 py-2.5 text-sm font-medium bg-primary-600 
+                                   text-white rounded-lg hover:bg-primary-700 
+                                   transition-all shadow-sm hover:shadow 
+                                   disabled:opacity-50 disabled:cursor-not-allowed">
+                        <span id="saveButtonText">
+                            <i class="fas fa-save mr-2"></i> Save Transaction
+                        </span>
+                    </button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<style>
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(-10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.animate-fadeIn {
+    animation: fadeIn 0.3s ease-out;
+}
+
+.category-card {
+    transition: all 0.2s ease;
+}
+
+.category-card:hover {
+    transform: translateY(-2px);
+}
+
+.category-card.selected {
+    box-shadow: 0 4px 12px rgba(139, 92, 246, 0.2);
+}
+
+/* Scrollbar Styling */
+#categoriesGrid::-webkit-scrollbar {
+    width: 6px;
+}
+
+#categoriesGrid::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 10px;
+}
+
+#categoriesGrid::-webkit-scrollbar-thumb {
+    background: #c7d2fe;
+    border-radius: 10px;
+}
+
+#categoriesGrid::-webkit-scrollbar-thumb:hover {
+    background: #a5b4fc;
+}
+
+.dark #categoriesGrid::-webkit-scrollbar-track {
+    background: #374151;
+}
+
+.dark #categoriesGrid::-webkit-scrollbar-thumb {
+    background: #4f46e5;
+}
+
+.dark #categoriesGrid::-webkit-scrollbar-thumb:hover {
+    background: #4338ca;
+}
+
+/* Custom file input styling */
+input[type="file"]::file-selector-button {
+    transition: all 0.2s ease;
+}
+
+/* Modal animations */
+.modal.fade .modal-dialog {
+    transform: translateY(-50px);
+    transition: transform 0.3s ease-out;
+}
+
+.modal.show .modal-dialog {
+    transform: translateY(0);
+}
+</style>
+
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
+    <script src="{% static 'js/main.js' %}"></script>
+    
+    {% block page_specific_js %}{% endblock %}
+</body>
+</html>

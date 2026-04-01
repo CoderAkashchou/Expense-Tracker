@@ -1,0 +1,363 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Expense Analytics | FinDash{% endblock %}
+
+{% block page_title %}<i class="fas fa-chart-pie me-2"></i>Expense Analytics{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+    <!-- Filters Card -->
+    <div class="bg-white dark:bg-gray-800 p-4 sm:p-6 rounded-xl shadow-lg border border-gray-100 dark:border-gray-700">
+        <h3 class="text-lg font-semibold mb-3 sm:mb-4 dark:text-white flex items-center">
+            <i class="fas fa-sliders-h mr-2 text-purple-600"></i> Filter Analytics
+        </h3>
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+            <!-- Date Range -->
+            <div>
+                <label class="block text-sm font-medium mb-1 dark:text-gray-300">Date Range</label>
+                <div class="relative">
+                    <select id="date-range" class="w-full px-3 py-2 text-sm sm:text-base border rounded-lg dark:bg-gray-700 dark:border-gray-600 focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all">
+                        <option value="7">Last 7 Days</option>
+                        <option value="30" selected>This Month</option>
+                        <option value="60">Last 2 Months</option>
+                        <option value="90">Last 3 Months</option>
+                        <option value="365">This Year</option>
+                        <option value="custom">Custom Range</option>
+                    </select>
+                </div>
+                <div id="custom-date-range" class="hidden mt-2 bg-gray-50 dark:bg-gray-700 p-3 rounded-lg">
+                    <div class="grid grid-cols-2 gap-2">
+                        <div>
+                            <label class="block text-xs font-medium mb-1 dark:text-gray-300">From</label>
+                            <input type="date" id="date-from" class="w-full px-2 py-1 text-sm border rounded dark:bg-gray-600 dark:border-gray-500">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium mb-1 dark:text-gray-300">To</label>
+                            <input type="date" id="date-to" class="w-full px-2 py-1 text-sm border rounded dark:bg-gray-600 dark:border-gray-500">
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Category Filter -->
+            <div>
+                <label class="block text-sm font-medium mb-1 dark:text-gray-300">Category</label>
+                <div class="relative">
+                    <select id="category-filter" class="w-full px-3 py-2 text-sm sm:text-base border rounded-lg dark:bg-gray-700 dark:border-gray-600 focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all appearance-none">
+                        <option value="" selected>All Categories</option>
+                        <option value="Food">Food & Dining</option>
+                        <option value="Transportation">Transportation</option>
+                        <option value="Housing">Housing</option>
+                        <option value="Utilities">Utilities</option>
+                        <option value="Entertainment">Entertainment</option>
+                        <option value="Shopping">Shopping</option>
+                        <option value="Healthcare">Healthcare</option>
+                        <option value="Education">Education</option>
+                        <option value="Travel">Travel</option>
+                        <option value="Other">Other</option>
+                    </select>
+                    <div class="absolute inset-y-0 right-0 flex items-center pr-2 pointer-events-none">
+                        <i class="fas fa-chevron-down text-gray-400"></i>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Payment Method -->
+            <div>
+                <label class="block text-sm font-medium mb-1 dark:text-gray-300">Payment Method</label>
+                <select id="payment-filter" class="w-full px-3 py-2 text-sm sm:text-base border rounded-lg dark:bg-gray-700 dark:border-gray-600 focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all">
+                    <option value="">Select Payment Method</option>
+                    <option value="cash">💵 Cash</option>
+                    <option value="upi">📱 UPI (PhonePe, GPay)</option>
+                    <option value="debit">💳 Debit Card</option>
+                    <option value="credit">💳 Credit Card</option>
+                    <option value="bank">🏦 Bank Transfer</option>
+                    <option value="wallet">👛 Digital Wallet</option>
+                </select>
+            </div>
+            
+            <!-- Apply Button -->
+            <div class="flex items-end">
+                <button id="apply-filters" class="w-full bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white px-4 py-2 rounded-lg shadow-md hover:shadow-lg transition-all duration-200 flex items-center justify-center text-sm sm:text-base">
+                    <span id="filter-text"><i class="fas fa-filter mr-2"></i> Apply Filters</span>
+                    <span id="filter-loading" class="hidden">
+                        <i class="fas fa-spinner fa-spin mr-2"></i> Applying...
+                    </span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Summary Cards -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
+        <!-- Total Expenses Card -->
+        <div class="bg-white dark:bg-gray-800 p-4 sm:p-5 rounded-xl shadow-lg border-t-4 border-red-500 dark:border-red-600">
+            <div class="flex justify-between items-start">
+                <div>
+                    <p class="text-xs sm:text-sm font-medium text-gray-500 dark:text-gray-400">Total Expenses</p>
+                    <h3 class="text-xl sm:text-2xl font-bold mt-1 dark:text-white" data-id="total-expenses">₹0</h3>
+                </div>
+                <div class="p-2 rounded-full bg-red-100 dark:bg-red-900/30">
+                    <i class="fas fa-wallet text-red-500 dark:text-red-400 text-sm sm:text-base"></i>
+                </div>
+            </div>
+            <div class="mt-3 sm:mt-4">
+                <div class="flex justify-between text-xs mb-1">
+                    <span class="dark:text-gray-400" data-id="total-expenses-change">0% from last month</span>
+                    <span class="font-medium" data-id="month-range">This Month</span>
+                </div>
+                <div class="w-full bg-gray-200 rounded-full h-2 dark:bg-gray-700">
+                    <div class="bg-red-500 h-2 rounded-full" data-id="total-expenses-progress" style="width: 0%"></div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Budget Remaining Card -->
+        <div class="bg-white dark:bg-gray-800 p-4 sm:p-5 rounded-xl shadow-lg border-t-4 border-green-500 dark:border-green-600">
+            <div class="flex justify-between items-start">
+                <div>
+                    <p class="text-xs sm:text-sm font-medium text-gray-500 dark:text-gray-400">Budget Remaining</p>
+                    <h3 class="text-xl sm:text-2xl font-bold mt-1 dark:text-white" data-id="budget-remaining">₹0</h3>
+                </div>
+                <div class="p-2 rounded-full bg-green-100 dark:bg-green-900/30">
+                    <i class="fas fa-piggy-bank text-green-500 dark:text-green-400 text-sm sm:text-base"></i>
+                </div>
+            </div>
+            <div class="mt-3 sm:mt-4">
+                <div class="flex justify-between text-xs mb-1">
+                    <span class="dark:text-gray-400" data-id="budget-used-text">0% of ₹0 budget used</span>
+                    <span class="font-medium">Monthly Budget</span>
+                </div>
+                <div class="w-full bg-gray-200 rounded-full h-2 dark:bg-gray-700">
+                    <div class="bg-green-500 h-2 rounded-full" data-id="budget-used-progress" style="width: 0%"></div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Daily Average Card -->
+        <div class="bg-white dark:bg-gray-800 p-4 sm:p-5 rounded-xl shadow-lg border-t-4 border-blue-500 dark:border-blue-600">
+            <div class="flex justify-between items-start">
+                <div>
+                    <p class="text-xs sm:text-sm font-medium text-gray-500 dark:text-gray-400">Daily Average</p>
+                    <h3 class="text-xl sm:text-2xl font-bold mt-1 dark:text-white" data-id="daily-average">₹0</h3>
+                </div>
+                <div class="p-2 rounded-full bg-blue-100 dark:bg-blue-900/30">
+                    <i class="fas fa-calendar-day text-blue-500 dark:text-blue-400 text-sm sm:text-base"></i>
+                </div>
+            </div>
+            <div class="mt-3 sm:mt-4">
+                <div class="flex justify-between text-xs mb-1">
+                    <span class="dark:text-gray-400">Per day spending</span>
+                    <span class="font-medium" data-id="days-count">30 days</span>
+                </div>
+                <div class="w-full bg-gray-200 rounded-full h-2 dark:bg-gray-700">
+                    <div class="bg-blue-500 h-2 rounded-full" style="width: 100%"></div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Transactions Count Card -->
+        <div class="bg-white dark:bg-gray-800 p-4 sm:p-5 rounded-xl shadow-lg border-t-4 border-amber-500 dark:border-amber-600">
+            <div class="flex justify-between items-start">
+                <div>
+                    <p class="text-xs sm:text-sm font-medium text-gray-500 dark:text-gray-400">Transactions</p>
+                    <h3 class="text-xl sm:text-2xl font-bold mt-1 dark:text-white" data-id="transactions-count">0</h3>
+                </div>
+                <div class="p-2 rounded-full bg-amber-100 dark:bg-amber-900/30">
+                    <i class="fas fa-exchange-alt text-amber-500 dark:text-amber-400 text-sm sm:text-base"></i>
+                </div>
+            </div>
+            <div class="mt-3 sm:mt-4">
+                <div class="flex justify-between text-xs mb-1">
+                    <span class="dark:text-gray-400">Total recorded</span>
+                    <span class="font-medium">This period</span>
+                </div>
+                <div class="w-full bg-gray-200 rounded-full h-2 dark:bg-gray-700">
+                    <div class="bg-amber-500 h-2 rounded-full" style="width: 100%"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Charts Section -->
+    <div class="grid grid-cols-1 gap-4 sm:gap-6">
+        <!-- Main Trend Chart -->
+        <div class="bg-white dark:bg-gray-800 p-4 sm:p-6 rounded-xl shadow-lg border border-gray-100 dark:border-gray-700">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between mb-3 sm:mb-4">
+                <h3 class="text-lg font-semibold dark:text-white flex items-center">
+                    <i class="fas fa-chart-line mr-2 text-purple-600"></i> Spending Trend
+                </h3>
+                <div class="flex space-x-2 mt-2 sm:mt-0">
+                    <button id="export-trend" class="text-xs sm:text-sm bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 px-2 sm:px-3 py-1 sm:py-1.5 rounded-lg flex items-center transition-colors">
+                        <i class="fas fa-download mr-1 sm:mr-1.5 text-xs sm:text-sm"></i> Export
+                    </button>
+                    <div class="relative">
+                        <select id="trend-granularity" class="text-xs sm:text-sm bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 px-2 sm:px-3 py-1 sm:py-1.5 pr-6 sm:pr-8 rounded-lg appearance-none focus:outline-none transition-colors">
+                            <option value="monthly">Monthly</option>
+                            <option value="weekly">Weekly</option>
+                            <option value="daily">Daily</option>
+                        </select>
+                        <div class="absolute inset-y-0 right-0 flex items-center pr-1 sm:pr-2 pointer-events-none">
+                            <i class="fas fa-chevron-down text-xs text-gray-500"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div id="trendChart" style="height: 250px; width: 100%;"></div>
+            <div class="mt-2 sm:mt-3 text-xs text-gray-500 dark:text-gray-400 flex justify-between">
+                
+                <span id="trend-period" class="font-medium">Jan 2023 - Dec 2023</span>
+            </div>
+        </div>
+        
+        <!-- Category and Payment Charts in a 2-column grid on larger screens -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
+            <!-- Category Breakdown Chart -->
+            <div class="bg-white dark:bg-gray-800 p-4 sm:p-6 rounded-xl shadow-lg border border-gray-100 dark:border-gray-700">
+                <div class="flex justify-between items-center mb-3 sm:mb-4">
+                    <h3 class="text-lg font-semibold dark:text-white flex items-center">
+                        <i class="fas fa-tags mr-2 text-purple-600"></i> By Category
+                    </h3>
+                </div>
+                <div id="categoryChart" style="height: 250px; width: 100%;"></div>
+                <div class="mt-2 sm:mt-3 text-xs text-gray-500 dark:text-gray-400">
+                    
+                </div>
+            </div>
+            
+            <!-- Payment Methods Chart -->
+            <div class="bg-white dark:bg-gray-800 p-4 sm:p-6 rounded-xl shadow-lg border border-gray-100 dark:border-gray-700">
+                <div class="flex justify-between items-center mb-3 sm:mb-4">
+                    <h3 class="text-lg font-semibold dark:text-white flex items-center">
+                        <i class="fas fa-credit-card mr-2 text-purple-600"></i> By Payment Method
+                    </h3>
+                </div>
+                <div id="paymentChart" style="height: 250px; width: 100%;"></div>
+                <div class="mt-2 sm:mt-3 text-xs text-gray-500 dark:text-gray-400">
+                    
+                </div>
+            </div>
+        </div>
+    </div>
+
+<!-- Top Transactions Table -->
+<div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-100 dark:border-gray-700 overflow-hidden">
+    <!-- Header -->
+    <div class="p-4 sm:p-6 border-b dark:border-gray-700">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div class="flex items-center">
+                <div class="p-2 bg-purple-100 dark:bg-purple-900/30 rounded-lg mr-3">
+                    <i class="fas fa-chart-line text-purple-600 dark:text-purple-400"></i>
+                </div>
+                <div>
+                    <h3 class="text-lg font-semibold dark:text-white">Top Transactions</h3>
+                    <p class="text-sm text-gray-500 dark:text-gray-400">Your recent spending activities</p>
+                </div>
+            </div>
+            <div class="flex items-center gap-2">
+                <button id="refresh-transactions" class="px-3 py-2 text-sm bg-purple-600 hover:bg-purple-700 text-white rounded-lg flex items-center transition-colors">
+                    <i class="fas fa-sync-alt mr-2"></i> Refresh
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Table Container -->
+    <div class="p-4 sm:p-6">
+        <div class="overflow-x-auto rounded-lg border border-gray-200 dark:border-gray-700">
+            <table class="w-full" id="top-expenses-table">
+                <thead class="bg-gray-50 dark:bg-gray-700/50">
+                    <tr class="text-left">
+                        <th class="py-3 px-4 text-xs font-semibold text-gray-600 dark:text-gray-300 uppercase tracking-wider">
+                            <div class="flex items-center">
+                                <i class="fas fa-calendar mr-2 text-gray-400"></i> Date
+                            </div>
+                        </th>
+                        <th class="py-3 px-4 text-xs font-semibold text-gray-600 dark:text-gray-300 uppercase tracking-wider">
+                            <div class="flex items-center">
+                                <i class="fas fa-receipt mr-2 text-gray-400"></i> Description
+                            </div>
+                        </th>
+                        <th class="py-3 px-4 text-xs font-semibold text-gray-600 dark:text-gray-300 uppercase tracking-wider">
+                            <div class="flex items-center">
+                                <i class="fas fa-tag mr-2 text-gray-400"></i> Category
+                            </div>
+                        </th>
+                        <th class="py-3 px-4 text-xs font-semibold text-gray-600 dark:text-gray-300 uppercase tracking-wider">
+                            <div class="flex items-center">
+                                <i class="fas fa-credit-card mr-2 text-gray-400"></i> Payment
+                            </div>
+                        </th>
+                        <th class="py-3 px-4 text-xs font-semibold text-gray-600 dark:text-gray-300 uppercase tracking-wider text-right">
+                            <div class="flex items-center justify-end">
+                                <i class="fas fa-indian-rupee-sign mr-2 text-gray-400"></i> Amount
+                            </div>
+                        </th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
+                    <tr>
+                        <td colspan="5" class="py-8 text-center">
+                            <div class="flex flex-col items-center justify-center">
+                                <i class="fas fa-spinner fa-spin text-2xl text-purple-600 mb-2"></i>
+                                <span class="text-sm text-gray-500 dark:text-gray-400">Loading transactions...</span>
+                            </div>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Pagination -->
+        <div class="mt-6 flex flex-col sm:flex-row justify-between items-center gap-4">
+            <div class="text-sm text-gray-600 dark:text-gray-400" id="table-summary">
+                Loading transaction details...
+            </div>
+            <div class="flex items-center space-x-2">
+                <button id="prev-page" 
+                        class="p-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                        disabled>
+                    <i class="fas fa-chevron-left"></i>
+                </button>
+                <div class="flex items-center space-x-1">
+                    <span class="px-3 py-1 bg-purple-600 text-white rounded-lg text-sm font-medium" id="current-page">1</span>
+                    <span class="text-gray-500 dark:text-gray-400 text-sm">of</span>
+                    <span class="text-gray-500 dark:text-gray-400 text-sm" id="total-pages">?</span>
+                </div>
+                <button id="next-page" 
+                        class="p-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                        disabled>
+                    <i class="fas fa-chevron-right"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Filter Modal (Optional - if you want to add filters) -->
+<div id="filter-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50">
+    <div class="flex items-center justify-center min-h-screen p-4">
+        <div class="bg-white dark:bg-gray-800 rounded-xl w-full max-w-md">
+            <!-- Filter content here -->
+        </div>
+    </div>
+</div>
+
+</div>
+
+<!-- Loading Overlay -->
+<div id="loading-overlay" class="fixed inset-0 bg-black bg-opacity-30 z-50 flex items-center justify-center transition-opacity duration-300 opacity-0 pointer-events-none">
+    <div class="bg-white dark:bg-gray-800 p-4 sm:p-6 rounded-xl shadow-2xl max-w-xs sm:max-w-sm w-full mx-4">
+        <div class="flex flex-col items-center">
+            <div class="animate-spin rounded-full h-10 sm:h-12 w-10 sm:w-12 border-t-2 border-b-2 border-purple-600 mb-3 sm:mb-4"></div>
+            <h3 class="text-base sm:text-lg font-medium text-center dark:text-white mb-1 sm:mb-2">Processing Data</h3>
+            <p class="text-gray-500 dark:text-gray-400 text-center text-xs sm:text-sm">Please wait while we analyze your spending patterns...</p>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
+
+<script src="{% static 'js/analytics.js' %}"></script>
+{% endblock %}
